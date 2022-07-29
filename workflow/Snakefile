@@ -5,22 +5,30 @@ SPECIES = pd.read_csv("../resources/drosophila_urls.csv", names=["organism", "ur
 rule all:
     input:
         # "../results/drosophila_melanogaster_cds.fa"
-        expand("../results/{species}.fa", species=SPECIES)
+        expand("../results/{species}_filtered.fa", species=SPECIES)
 
 rule download_genomes:
     input:  "../resources/drosophila_urls.csv"
-    output: "../results/{species}.fa.gz"
+    output: expand("../resources/genomes/{species}.fa.gz", species=SPECIES)
     shell:
         """
-        scripts/download_ncbi_genomes.py --list {input} --folder ../results/
+        scripts/download_ncbi_genomes.py --list {input} --folder ../resources/genomes/
         """
 
 
 rule decompress_genomes:
-    input:  "../results/{species}.fa.gz"
-    output: "../results/{species}.fa"
+    input:  "../resources/genomes/{species}.fa.gz"
+    output: temp("../results/{species}.fa")
     shell:
         """
         gunzip -c {input} > {output}
         """
 
+
+rule get_longest_isoform:
+    input:  "../results/{species}.fa"
+    output: "../results/{species}_filtered.fa"
+    shell:
+        """
+        ./scripts/get_longest_isoform.py -s {input} > {output}
+        """
