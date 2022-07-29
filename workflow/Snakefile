@@ -1,0 +1,26 @@
+# SPECIES, = glob_wildcards("../results/{species}.fa.gz")
+import pandas as pd
+SPECIES = pd.read_csv("../resources/drosophila_urls.csv", names=["organism", "url"]).organism
+
+rule all:
+    input:
+        # "../results/drosophila_melanogaster_cds.fa"
+        expand("../results/{species}.fa", species=SPECIES)
+
+rule download_genomes:
+    input:  "../resources/drosophila_urls.csv"
+    output: "../results/{species}.fa.gz"
+    shell:
+        """
+        scripts/download_ncbi_genomes.py --list {input} --folder ../results/
+        """
+
+
+rule decompress_genomes:
+    input:  "../results/{species}.fa.gz"
+    output: "../results/{species}.fa"
+    shell:
+        """
+        gunzip -c {input} > {output}
+        """
+
