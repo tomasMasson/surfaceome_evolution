@@ -20,7 +20,7 @@ def download_url(url, output):
         fh.write(response.content)
 
 
-def download_ncbi_genomes(url_list):
+def download_ncbi_genomes(url_list, folder):
     """
     Downloads NCBI entries based on a URLs list
     """
@@ -30,7 +30,7 @@ def download_ncbi_genomes(url_list):
     # Download single endpoint
     for row in df.iterrows():
         url = row[1].url
-        output = f"{row[1].organism}.fa.gz"
+        output = f"{folder}{row[1].organism}.fa.gz"
         print(f"Downloading '{output}'\n---")
         download_url(url, output)
         print(f"Finished downloading '{output}'\n---")
@@ -43,17 +43,19 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("-l", "--list",
               help="URLs list")
+@click.option("-f", "--folder",
+              help="Destination folder for outputs")
 # CLI main function
-def cli(list):
+def cli(list, folder):
     """
     Downloads genome dataset from NCBI FTP based on a list of URLs
 
     Invocation example:
 
-    ./download_ncbi_genomes.py --url_list diptera_urls.csv
+    ./download_ncbi_genomes.py --list diptera_urls.csv --folder ../results/
     """
 
-    download_ncbi_genomes(list)
+    download_ncbi_genomes(list, folder)
 
 
 if __name__ == '__main__':
