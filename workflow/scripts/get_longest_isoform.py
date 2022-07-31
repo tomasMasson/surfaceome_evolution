@@ -31,14 +31,32 @@ def get_longest_isoform(seqs: SeqIO.SeqRecord) -> str:
     return fseqs
 
 
-def save_sequences(sequences):
+def save_cds_sequences(sequences, organism):
 
     # Get longest isoforms
     fseqs = get_longest_isoform(sequences)
-    # Send filtered sequences into standard output"
-    for key in fseqs:
-        seq = fseqs[key]
-        print(f'>{seq.description}\n{seq.seq}')
+    # Set output name
+    output = organism + "_filt.fna"
+    # Save filtered sequences into output
+    with open(output, "w") as fh:
+        for key in fseqs:
+            seq = fseqs[key]
+            fh.write(f'>{seq.id}\n{seq.seq}\n')
+
+
+def save_protein_sequences(sequences, organism):
+
+    # Get longest isoforms
+    fseqs = get_longest_isoform(sequences)
+    # Set output name
+    output = organism + "_filt.faa"
+    # Save filtered sequences into output
+    with open(output, "w") as fh:
+        for key in fseqs:
+            seq = fseqs[key]
+            # Translate CDS into amino acid sequence
+            seq.seq = seq.seq.translate(to_stop=True)
+            fh.write(f'>{seq.id}\n{seq.seq}\n')
 
 
 # Set CLI parameters
@@ -47,16 +65,19 @@ SETTINGS = dict(help_option_names=['-h', '--help'])
 
 @click.command(context_settings=SETTINGS)
 @click.option("-s",
-              "--seqs",
-              "sequences",
+              "--sequences",
               help="Sequences to filter")
+@click.option("-o",
+              "--organism",
+              help="Organism name used for output")
 # Command line interface
-def cli(sequences):
+def cli(sequences, organism):
     """
     Returns the longest isoform of each CDS based on its gene=[ID] feature
     """
 
-    save_sequences(sequences)
+    save_cds_sequences(sequences, organism)
+    save_protein_sequences(sequences, organism)
 
 
 if __name__ == "__main__":
