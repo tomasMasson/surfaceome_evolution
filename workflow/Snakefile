@@ -4,8 +4,9 @@ SPECIES = pd.read_csv("../resources/drosophila_urls.csv", names=["organism", "ur
 
 rule all:
     input:
-        # "../results/drosophila_melanogaster_cds.fa"
-        expand("../results/{species}_filtered.fa", species=SPECIES)
+        expand("../results/{species}_filt.faa", species=SPECIES),
+        directory("../results/orthofinder_run/")
+
 
 rule download_genomes:
     input:  "../resources/drosophila_urls.csv"
@@ -27,8 +28,22 @@ rule decompress_genomes:
 
 rule get_longest_isoform:
     input:  "../results/{species}.fa"
-    output: "../results/{species}_filtered.fa"
+    output: "../results/{species}_filt.faa",
+            "../results/{species}_filt.fna"
     shell:
         """
-        ./scripts/get_longest_isoform.py -s {input} > {output}
+        ./scripts/get_longest_isoform.py -s {input} -o {wildcards.species} && \
+        mv *filt.faa *filt.fna ../results/
+        """
+
+
+rule run_orthofinder:
+    input: expand("../results/{species}_filt.faa", species=SPECIES)
+    output: directory("../results/orthofinder_run/")
+    params: "../results/orthofinder_run"
+    shell:
+        """
+        mkdir {params} && \
+        mv {input} {params} && \
+        orthofinder -f {params}
         """
