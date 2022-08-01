@@ -77,7 +77,7 @@ def cli(sequences, organism):
     """
 
     save_cds_sequences(sequences, organism)
-    save_protein_sequences(sequences, organism)
+    # save_protein_sequences(sequences, organism)
 
 
 if __name__ == "__main__":

@@ -4,8 +4,8 @@ SPECIES = pd.read_csv("../resources/drosophila_urls.csv", names=["organism", "ur
 
 rule all:
     input:
-        expand("../results/{species}_filt.faa", species=SPECIES),
-        directory("../results/orthofinder_run/")
+        expand("../results/{species}_filt.fna", species=SPECIES),
+        directory("../results/evolutionary_rates/")
 
 
 rule download_genomes:
@@ -28,22 +28,36 @@ rule decompress_genomes:
 
 rule get_longest_isoform:
     input:  "../results/{species}.fa"
-    output: "../results/{species}_filt.faa",
-            "../results/{species}_filt.fna"
+    output: "../results/{species}_filt.fna",
+    # output: "../results/{species}_filt.faa",
+    #         "../results/{species}_filt.fna"
     shell:
         """
         ./scripts/get_longest_isoform.py -s {input} -o {wildcards.species} && \
-        mv *filt.faa *filt.fna ../results/
+        mv *filt.fna ../results/
         """
 
 
-rule run_orthofinder:
-    input: expand("../results/{species}_filt.faa", species=SPECIES)
-    output: directory("../results/orthofinder_run/")
-    params: "../results/orthofinder_run"
+rule extract_orthgroup_multifasta:
+    input: expand("../results/{species}_filt.fna", species=SPECIES)
+    params: "../results/evolutionary_rates/"
+    output: directory("../results/evolutionary_rates/")
     shell:
         """
+        cat {input} > sequences.fna && \
         mkdir {params} && \
-        mv {input} {params} && \
-        orthofinder -f {params}
+        scripts/extract_orthogroups.py -o ../resources/Orthogroups.tsv -s sequences.fna -d {params} && \
+        rm sequences.fna
         """
+
+
+# rule run_orthofinder:
+#     input: expand("../results/{species}_filt.faa", species=SPECIES)
+#     output: directory("../results/orthofinder_run/")
+#     params: "../results/orthofinder_run"
+#     shell:
+#         """
+#         mkdir {params} && \
+#         mv {input} {params} && \
+#         orthofinder -f {params}
+#         """
