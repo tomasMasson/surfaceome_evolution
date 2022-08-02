@@ -15,19 +15,53 @@ def extract_orthogroups(orthogroups, multifasta, outdir):
     df = pd.read_csv(orthogroups, sep="\t").dropna()
     dc = {}
     for row in df.iterrows():
-        key = row[1].values[0]
-        genes = []
-        for column in row[1].values[1:]:
-            for value in column.split(", "):
-                genes.append(value)
-        if len(genes) == 6:
-            dc[key] = genes
-    for key in dc:
-        p = outdir + f"{key}.fasta"
+        og = row[1].values[0]
+        species = row[1].index[1:]
+        genes = row[1].values[1:]
+        orthologs = [(specie, gene)
+                     for specie, gene in zip(species, genes)
+                     ]
+        p = outdir + f"{og}.fna"
         with open(p, "w") as fh:
-            for i in dc[key]:
-                seq = seqs[i]
-                fh.write(f"{seq.id}\n{seq.seq}\n")
+            for seq in orthologs:
+                seq_id = seq[0]
+                seq_seq = seqs[seq[1]].seq
+                fh.write(f">{seq_id}\n{seq_seq}\n")
+        p = outdir + f"{og}.faa"
+        with open(p, "w") as fh:
+            for seq in orthologs:
+                seq_id = seq[0]
+                seq_seq = seqs[seq[1]].seq
+                fh.write(f">{seq_id}\n{seq_seq.translate(to_stop=True)}\n")
+        # p = outdir + f"{key}.faa"
+        # with open(p, "w") as fh:
+        #     for i in dc[key]:
+        #         seq_data = seqs[i]
+        #         seq_id = seq_data.id.split("_cds")[0].split("|")[1]
+        #         seq_seq = seq_data.seq
+        #         fh.write(f">{seq_id}\n{seq_seq.translate(to_stop=True)}\n")
+        # key = row[1].values[0]
+        # genes = []
+        # for column in row[1].values[1:]:
+        #     for value in column.split(", "):
+        #         genes.append(value)
+        # if len(genes) == 6:
+        #     dc[key] = genes
+    # for key in dc:
+        # p = outdir + f"{key}.fna"
+        # with open(p, "w") as fh:
+        #     for i in dc[key]:
+        #         seq_data = seqs[i]
+        #         seq_id = seq_data.id.split("_cds")[0].split("|")[1]
+        #         seq_seq = seq_data.seq
+        #         fh.write(f">{seq_id}\n{seq_seq}\n")
+        # p = outdir + f"{key}.faa"
+        # with open(p, "w") as fh:
+        #     for i in dc[key]:
+        #         seq_data = seqs[i]
+        #         seq_id = seq_data.id.split("_cds")[0].split("|")[1]
+        #         seq_seq = seq_data.seq
+        #         fh.write(f">{seq_id}\n{seq_seq.translate(to_stop=True)}\n")
 
 
 # CLI options
