@@ -1,6 +1,6 @@
 import pandas as pd
 SPECIES = pd.read_csv("../resources/drosophila_urls.csv", names=["organism", "url"]).organism
-ORTHOGROUPS = pd.read_csv("../resources/test_orthogroups.tsv", sep="\t", usecols=["Orthogroup"]).Orthogroup
+ORTHOGROUPS = pd.read_csv("../resources/Orthogroups.tsv", sep="\t", usecols=["Orthogroup"]).Orthogroup
 
 rule all:
     input:
