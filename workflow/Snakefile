@@ -1,13 +1,12 @@
-# SPECIES, = glob_wildcards("../results/{species}.fa.gz")
 import pandas as pd
 SPECIES = pd.read_csv("../resources/drosophila_urls.csv", names=["organism", "url"]).organism
-ORTHOGROUPS = pd.read_csv("../resources/dummy_orthogroups.tsv", sep="\t", usecols=["Orthogroup"]).Orthogroup
+ORTHOGROUPS = pd.read_csv("../resources/test_orthogroups.tsv", sep="\t", usecols=["Orthogroup"]).Orthogroup
 
 rule all:
     input:
         expand("../results/{species}_filt.fna", species=SPECIES),
-        # directory("../results/evolutionary_rates/"),
-        expand("../results/evolutionary_rates/{og}.aln.fna.FUBAR.json", og=ORTHOGROUPS)
+        expand("../results/evolutionary_rates/{og}.aln.fna.FUBAR.json", og=ORTHOGROUPS),
+        expand("../results/evolutionary_rates/{og}.aln.fna.ABSREL.json", og=ORTHOGROUPS)
 
 
 rule download_genomes:
@@ -30,13 +29,11 @@ rule decompress_genomes:
 
 rule get_longest_isoform:
     input:  "../results/{species}.fa"
-    output: "../results/{species}_filt.fna",
-    # output: "../results/{species}_filt.faa",
-    #         "../results/{species}_filt.fna"
+    output: temp("../results/{species}_filt.fna")
     shell:
         """
         ./scripts/get_longest_isoform.py -s {input} -o {wildcards.species} && \
-        mv *filt.fna ../results/
+        mv {wildcards.species}_filt.fna ../results/
         """
 
 
@@ -45,16 +42,13 @@ rule extract_orthogroup_multifasta:
     params: "../results/evolutionary_rates/"
     output: expand("../results/evolutionary_rates/{og}.fna", og=ORTHOGROUPS),
             expand("../results/evolutionary_rates/{og}.faa", og=ORTHOGROUPS)
-    # output: directory("../results/evolutionary_rates/")
     shell:
-#        """
-#        cat {input} > sequences.fna && \
-#        mkdir {params} && \
         """
         cat {input} > sequences.fna && \
-        scripts/extract_orthogroups.py -o ../resources/dummy_orthogroups.tsv -s sequences.fna -d {params} && \
+        scripts/extract_orthogroups.py -o ../resources/test_orthogroups.tsv -s sequences.fna -d {params} && \
         rm sequences.fna
         """
+
 
 rule protein_alignment:
     input: "../results/evolutionary_rates/{og}.faa"
@@ -73,7 +67,8 @@ rule codon_alignment:
       pal2nal.pl {input} -output fasta > {output}
       """
 
-rule run_fubar:
+
+rule run_fubar_analysis:
     input: "../results/evolutionary_rates/{og}.aln.fna",
            "../resources/SpeciesTree_rooted.txt"
     output: "../results/evolutionary_rates/{og}.aln.fna.FUBAR.json"
@@ -82,13 +77,12 @@ rule run_fubar:
       hyphy fubar --alignment {input[0]} --tree {input[1]}
       """
 
-# rule run_orthofinder:
-#     input: expand("../results/{species}_filt.faa", species=SPECIES)
-#     output: directory("../results/orthofinder_run/")
-#     params: "../results/orthofinder_run"
-#     shell:
-#         """
-#         mkdir {params} && \
-#         mv {input} {params} && \
-#         orthofinder -f {params}
-#         """
+
+rule run_absrel_analysis:
+    input: "../results/evolutionary_rates/{og}.aln.fna",
+           "../resources/SpeciesTree_rooted.txt"
+    output: "../results/evolutionary_rates/{og}.aln.fna.ABSREL.json"
+    shell:
+      """
+      hyphy absrel --alignment {input[0]} --tree {input[1]}
+      """
