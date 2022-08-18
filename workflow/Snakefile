@@ -1,12 +1,16 @@
 import pandas as pd
 SPECIES = pd.read_csv("../resources/drosophila_urls.csv", names=["organism", "url"]).organism
-ORTHOGROUPS = pd.read_csv("../resources/Orthogroups.tsv", sep="\t", usecols=["Orthogroup"]).Orthogroup
+ORTHOGROUPS = pd.read_csv("../resources/test_orthogroups.tsv", sep="\t", usecols=["Orthogroup"]).Orthogroup
 
 rule all:
     input:
-        expand("../results/{species}_filt.fna", species=SPECIES),
-        expand("../results/evolutionary_rates/{og}.aln.fna.FUBAR.json", og=ORTHOGROUPS),
-        expand("../results/evolutionary_rates/{og}.aln.fna.ABSREL.json", og=ORTHOGROUPS)
+        # expand("../results/{species}_filt.fna", species=SPECIES),
+        # expand("../results/evolutionary_rates/{og}.aln.fna.FUBAR.json", og=ORTHOGROUPS),
+        # expand("../results/evolutionary_rates/{og}.aln.fna.ABSREL.json", og=ORTHOGROUPS),
+        # expand("../results/evolutionary_rates/{og}.hyphy.csv", og=ORTHOGROUPS),
+        "../results/evolutionary_rates/evolutionary_rates.csv"
+        # "../results/evolutionary_rates/hyphy_results.csv"
+
 
 
 rule download_genomes:
@@ -85,4 +89,25 @@ rule run_absrel_analysis:
     shell:
       """
       hyphy absrel --alignment {input[0]} --tree {input[1]}
+      """
+
+
+rule process_fubar_absrel_results:
+    input:
+        fubar="../results/evolutionary_rates/{og}.aln.fna.FUBAR.json",
+        absrel="../results/evolutionary_rates/{og}.aln.fna.ABSREL.json",
+
+    output: temp("../results/evolutionary_rates/{og}.hyphy.csv")
+    shell:
+      """
+      scripts/parse_hyphy_output.py --fubar {input.fubar} --absrel {input.absrel} --output {output}
+      """
+
+
+rule merge_hyphy_results:
+    input: expand("../results/evolutionary_rates/{og}.hyphy.csv", og=ORTHOGROUPS)
+    output: "../results/evolutionary_rates/evolutionary_rates.csv"
+    shell:
+      """
+      cat {input} > {output}
       """
